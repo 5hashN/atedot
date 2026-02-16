@@ -23,6 +23,9 @@ void render_full_w_axes(const Canvas *surf,
                 int x_ticks, int y_ticks, bool use_color);
 
 int plot_line(Canvas *surf, int x0, int y0, int x1, int y1, uint32_t color); // bresenham line
-int plot_trig(Canvas *surf, const char *func, uint32_t color);
+
+int plot_expr(Canvas *surf, const char *func, uint32_t color,
+              double xmin, double xmax, double ymin, double ymax);
+
 int plot_from_csv(Canvas *surf, const char *path, int xcol, int ycol, uint32_t color,
                 double *out_xmin, double *out_xmax, double *out_ymin, double *out_ymax);

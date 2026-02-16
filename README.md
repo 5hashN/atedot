@@ -6,7 +6,7 @@ lightweight terminal plotting tool written in C without extra deps for simple gr
 
 the aim is to make it similar to gnuplot and visualise data within the terminal
 
-works best with monospaced fonts
+requires font with braille support and works best with monospaced fonts
 
 ## build
 

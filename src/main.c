@@ -1,5 +1,6 @@
 #include "../include/common.h"
 #include "../include/atedot.h"
+#include "../include/expr.h"
 #include "../include/repl.h"
 
 int main() {

@@ -60,10 +60,12 @@ static uint32_t cell_color(const Canvas *surf, int x, int y) {
 
     for (int dy = 0; dy < 4; ++dy) {
         for (int dx = 0; dx < 2; ++dx) {
-            int px = x*2 + dx, py = y*4 + dy;
-            if (px < surf->px_w && py < surf->px_h) {
-                int bit = braille_bit(dx, dy);
-                if (mask & (1u << bit)) return surf->colors[py * surf->px_w + px];
+            int bit = braille_bit(dx, dy);
+            if (mask & (1u << bit)) {
+                int px = x*2 + dx, py = y*4 + dy;
+                if (px < surf->px_w && py < surf->px_h) {
+                    return surf->colors[py * surf->px_w + px];
+                }
             }
         }
     }
