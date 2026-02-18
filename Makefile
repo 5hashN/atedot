@@ -1,68 +1,21 @@
-# compiler and flags
-CC = gcc
-CFLAGS = -Wall -Wextra -O3 -std=c11 -Iinclude
-LDFLAGS = -lm
+BUILD_DIR := build
 
-# directories
-SRC_DIR = src
-OBJ_DIR = build
-EXAMPLES_DIR = examples
-EX_OBJ_DIR = $(OBJ_DIR)/examples
+all: configure build
 
-# all sources under src, except main.c
-LIB_SRC = $(filter-out $(SRC_DIR)/main.c,$(wildcard $(SRC_DIR)/**/*.c) $(wildcard $(SRC_DIR)/*.c))
-LIB_OBJ = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(LIB_SRC))
+configure:
+	cmake -S . -B $(BUILD_DIR)
 
-# main.c
-MAIN_SRC = $(SRC_DIR)/main.c
-MAIN_OBJ = $(OBJ_DIR)/main.o
+build:
+	cmake --build $(BUILD_DIR)
 
-# examples
-EXAMPLES = $(wildcard $(EXAMPLES_DIR)/*.c)
-EX_TARGETS = $(patsubst $(EXAMPLES_DIR)/%.c,$(EXAMPLES_DIR)/%,$(EXAMPLES))
-EX_OBJ = $(patsubst $(EXAMPLES_DIR)/%.c,$(EX_OBJ_DIR)/%.o,$(EXAMPLES))
+run:
+	cmake --build $(BUILD_DIR) --target run
 
-# default target
-all: atedot $(EX_TARGETS)
-
-# build core executable
-atedot: $(LIB_OBJ) $(MAIN_OBJ)
-	$(CC) $(LIB_OBJ) $(MAIN_OBJ) -o $@ $(LDFLAGS)
-
-# build examples
-$(EXAMPLES_DIR)/%: $(EX_OBJ_DIR)/%.o $(LIB_OBJ)
-	$(CC) $^ -o $@ $(LDFLAGS)
-
-# compile any .c under src -> build/
-$(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# compile main.c
-$(OBJ_DIR)/main.o: $(MAIN_SRC)
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# compile example sources
-$(EX_OBJ_DIR)/%.o: $(EXAMPLES_DIR)/%.c
-	mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
-
-# install binary
-install: atedot
-	install -d $(DESTDIR)$(PREFIX)/bin
-	install -m 755 atedot $(DESTDIR)$(PREFIX)/bin/
-
-# uninstall binary
-uninstall:
-	rm -f $(DESTDIR)$(PREFIX)/bin/atedot
-
-# debug build
-debug: CFLAGS += -O0 -g
-debug: clean all
-
-# clean
 clean:
-	rm -rf $(OBJ_DIR) $(EX_OBJ_DIR) atedot $(EX_TARGETS)
+	cmake --build $(BUILD_DIR) --target clean
 
-.PHONY: all clean debug
+format:
+	cmake -E echo "Formatting sources..."
+	clang-format -i src/*.c include/*.h
+
+.PHONY: all configure build run clean format

@@ -1,57 +1,79 @@
 cmake_minimum_required(VERSION 3.16)
-project(atedot C)
 
-set(CMAKE_C_STANDARD 11)
-set(CMAKE_C_STANDARD_REQUIRED ON)
-set(CMAKE_C_EXTENSIONS OFF)
+project(atedot LANGUAGES C)
 
-# Default to Release build if not specified
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Release)
-endif()
+# standard GNU install paths
+include(GNUInstallDirs)
 
-# Add include directory
-include_directories(${CMAKE_SOURCE_DIR}/include)
+# library target
+add_library(atedot_lib STATIC)
 
-# Collect all source files in src (recursively)
-file(GLOB_RECURSE SRC_FILES CONFIGURE_DEPENDS
-    ${CMAKE_SOURCE_DIR}/src/*.c
+# collect sources
+file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/*.c")
+list(FILTER LIB_SOURCES EXCLUDE REGEX "src/main.c$")
+
+# add sources to the target private scope
+target_sources(atedot_lib PRIVATE ${LIB_SOURCES})
+
+# C11 standard
+set_target_properties(atedot_lib PROPERTIES
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON
+    C_EXTENSIONS OFF
 )
 
-# Split out main.c from library sources
-list(FILTER SRC_FILES EXCLUDE REGEX "src/main.c$")
+# define include directories
+target_include_directories(atedot_lib PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 
-# Build library from src (everything except main.c)
-add_library(atedot_lib ${SRC_FILES})
-
-# Build main executable (depends on library)
-add_executable(atedot src/main.c)
-
-if (WIN32)
-    set(MATH_LIB "")
+# compiler warnings (MSVC vs GCC/Clang)
+if(MSVC)
+    target_compile_options(atedot_lib PRIVATE /W4)
 else()
-    set(MATH_LIB m)
+    target_compile_options(atedot_lib PRIVATE -Wall -Wextra -pedantic)
 endif()
 
-target_link_libraries(atedot PRIVATE atedot_lib ${MATH_LIB})
+# link math library
+if(NOT MSVC)
+    target_link_libraries(atedot_lib PRIVATE m)
+endif()
 
-# Build all examples (one executable per .c file)
-file(GLOB EXAMPLES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/examples/*.c)
+# main executable
+add_executable(atedot src/main.c)
+target_link_libraries(atedot PRIVATE atedot_lib)
+
+# examples
+file(GLOB EXAMPLES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/examples/*.c")
 foreach(EX ${EXAMPLES})
     get_filename_component(EX_NAME ${EX} NAME_WE)
     add_executable(${EX_NAME} ${EX})
-    target_link_libraries(${EX_NAME} PRIVATE atedot_lib ${MATH_LIB})
+    target_link_libraries(${EX_NAME} PRIVATE atedot_lib)
 endforeach()
 
-# --- Install paths ---
-if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    if(WIN32)
-        # Default to local AppData/bin for Windows
-        set(CMAKE_INSTALL_PREFIX "$ENV{LOCALAPPDATA}/atedot" CACHE PATH "default install path" FORCE)
-    else()
-        # Default to ~/.local for Linux/macOS
-        set(CMAKE_INSTALL_PREFIX "$ENV{HOME}/.local" CACHE PATH "default install path" FORCE)
-    endif()
-endif()
 
-install(TARGETS atedot DESTINATION bin)
+# install artifacts to system locations
+install(TARGETS atedot atedot_lib
+    EXPORT atedotTargets
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+)
+
+# install headers
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+
+# export target configuration
+install(EXPORT atedotTargets
+    FILE atedotTargets.cmake
+    NAMESPACE atedot::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/atedot
+)
+
+# cross-platorm command to run
+add_custom_target(run
+    COMMAND $<TARGET_FILE:atedot>
+    DEPENDS atedot
+    USES_TERMINAL
+)

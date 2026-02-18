@@ -11,13 +11,13 @@ static const char *pos;
 static double current_x;
 static int *err_flag;
 
-static double parse_expr();
+static double parse_expr(void);
 
-static void skip_spaces() {
+static void skip_spaces(void) {
     while (isspace((unsigned char)*pos)) pos++;
 }
 
-static double parse_factor() {
+static double parse_factor(void) {
     skip_spaces();
     double v = 0.0;
 
@@ -83,7 +83,7 @@ static double parse_factor() {
     return v;
 }
 
-static double parse_term() {
+static double parse_term(void) {
     double v = parse_factor();
     skip_spaces();
     while (*pos == '*' || *pos == '/') {
@@ -96,7 +96,7 @@ static double parse_term() {
     return v;
 }
 
-static double parse_expr() {
+static double parse_expr(void) {
     double v = parse_term();
     skip_spaces();
     while (*pos == '+' || *pos == '-') {
